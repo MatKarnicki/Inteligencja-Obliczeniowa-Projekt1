@@ -94,7 +94,7 @@ class Discriminator(nn.Module):
 
         self.im_dim = image_dimension
         self.h_dim = hidden_dimension
-
+    #   Discriminator network
         self.disc = nn.Sequential(
             self.discriminator_block(self.im_dim, self.h_dim * gan_shape[0]),
             self.discriminator_block(self.h_dim * gan_shape[0], self.h_dim * gan_shape[1]),
