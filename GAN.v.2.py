@@ -6,7 +6,9 @@ from torch.utils.data import DataLoader
 import os
 import numpy as np
 import cv2
-
+seed = 284795
+torch.manual_seed(seed)
+np.random.seed(seed)
 
 def load_photos_as_arrays():
     load_folder = "processed2/"
@@ -18,14 +20,15 @@ def load_photos_as_arrays():
             photo_arrays.append(img)
     return np.array(photo_arrays)
 
-    # Hyperparameters for training loop
-n_epochs = 2000
+# Hyperparameters for training loop
+n_epochs = 80
 noise_dimension = 64
 lr = 0.0005
-display_step = 300
-batch_size = 64
+display_step = 150
+batch_size = 16
 hidden_dimension = 128
-saveFolder = (f"generated_images_,gan_shape=8,16,16,8,hd={hidden_dimension} bs={batch_size},lr={lr},noise={noise_dimension}")
+gan_shape = [8, 16, 16, 8] #zakladamy 4 warstwy
+saveFolder = (f"generated_images_,gan_shape={gan_shape},hd={hidden_dimension} bs={batch_size},lr={lr},noise={noise_dimension}")
 os.makedirs(saveFolder, exist_ok=True)
 
 # Define a function to save generated images
@@ -63,11 +66,11 @@ class Generator(nn.Module):
 
         # Generator network
         self.gen = nn.Sequential(
-            self.generator_block(self.n_dim, self.h_dim * 8),
-            self.generator_block(self.h_dim * 8, self.h_dim * 16),
-            self.generator_block(self.h_dim * 16, self.h_dim * 16),
-            self.generator_block(self.h_dim * 16, self.h_dim * 8),
-            nn.Linear(self.h_dim * 8, self.im_dim),
+            self.generator_block(self.n_dim, self.h_dim * gan_shape[0]),
+            self.generator_block(self.h_dim * gan_shape[0], self.h_dim * gan_shape[1]),
+            self.generator_block(self.h_dim * gan_shape[1], self.h_dim * gan_shape[2]),
+            self.generator_block(self.h_dim * gan_shape[2], self.h_dim * gan_shape[3]),
+            nn.Linear(self.h_dim * gan_shape[3], self.im_dim),
             nn.Sigmoid()
         )
 
@@ -93,12 +96,11 @@ class Discriminator(nn.Module):
         self.h_dim = hidden_dimension
 
         self.disc = nn.Sequential(
-            self.discriminator_block(self.im_dim, self.h_dim * 8),
-            self.discriminator_block(self.h_dim * 8, self.h_dim * 16),
-            self.discriminator_block(self.h_dim * 16, self.h_dim * 16),
-            self.discriminator_block(self.h_dim * 16, self.h_dim * 8),
-            # self.discriminator_block(self.h_dim * 8, self.h_dim * 32),
-            nn.Linear(self.h_dim * 8, 1)
+            self.discriminator_block(self.im_dim, self.h_dim * gan_shape[0]),
+            self.discriminator_block(self.h_dim * gan_shape[0], self.h_dim * gan_shape[1]),
+            self.discriminator_block(self.h_dim * gan_shape[1], self.h_dim * gan_shape[2]),
+            self.discriminator_block(self.h_dim * gan_shape[2], self.h_dim * gan_shape[3]),
+            nn.Linear(self.h_dim * gan_shape[3], 1)
         )
 
     def forward(self, image):
